@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class EmployeeController {
 
     @GetMapping
     @Operation(summary = "Get all employees with pagination, sorting, and optional filtering")
-    public ResponseEntity<Page<Employee>> getEmployees(
+    public ResponseEntity<?> getEmployees(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) BigDecimal minSalary,
@@ -31,9 +32,18 @@ public class EmployeeController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String direction) {
 
-        Page<Employee> result = employeeService.getEmployees(
-                name, department, minSalary, maxSalary, page, size, sortBy, direction);
-
-        return ResponseEntity.ok(result);
+        try {
+            Page<Employee> result = employeeService.getEmployees(
+                    name, department, minSalary, maxSalary, page, size, sortBy, direction);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while fetching the employee list.");
+        }
     }
 }
